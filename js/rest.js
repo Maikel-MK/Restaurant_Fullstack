@@ -25,7 +25,7 @@ function guardarcliente(){
     const hora = document.querySelector('#hora').value 
 
     //una foramde validar si no esta vacio sin el if es:
-    const camposVacios = [mesa,hora].some(i=>i=='')//somo lo toma para un booeano que si almenos 1 de los que estan alli esta vacio todo saldra false
+    const camposVacios = [mesa,hora].some(i=>i=='')//some lo toma para un booleano que si al menos 1 de los que estan alli esta vacio todo saldra false
     //si todos estan vacios saldra true
 
     //esta es la manera para que no se repitan los mensajes (en este caso los de error)

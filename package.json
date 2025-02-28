@@ -1,6 +1,7 @@
 {
-  "name": "restaurant_app",
+  "name": "restaurant_fullstack",
   "version": "1.0.0",
+  "description": "",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -10,6 +11,5 @@
   "license": "ISC",
   "dependencies": {
     "json-server": "^1.0.0-beta.3"
-  },
-  "description": ""
+  }
 }
