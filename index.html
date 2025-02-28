@@ -17,9 +17,7 @@
     <div class="d-flex mt-4 justify-content-center">
         <button  data-bs-toggle="modal" data-bs-target="#formulario" type="button" class="btn btn-success">Nueva Orden</button>
 
-        <button  data-bs-toggle="modal" data-bs-target="#mesas" type="button" class="btn btn-success ms-5" >Nueva Mesa</button>
- 
-    </div>
+        <button data-bs-toggle="modal" data-bs-target="#mesas" type="button" class="btn btn-success ms-5">Nueva Mesa</button>    </div>
 
 
     <main id="menu" class="container bg-light mt-5 p-4 d-none">
@@ -65,32 +63,24 @@
             </div>
         </div>
 
-        <!-- <div class="modal fade" id="mesas">
-            <div class="modal-dialog">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h2 class="modal-title">Mesa App</h2>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-                    <div class="modal-body">
-                        <form>
-                            <div class="mb-3">
-                                <label class="form-label">Mesa</label>
-                                <input id="mesa" type="number" class="form-control" min="1" max="8">
-                            </div>
-                            <div class="mb-3">
-                                <label class="form-label">Hora</label>
-                                <input id="hora" type="time" class="form-control" >
-                            </div>
-                        </form>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
-                        <button id="guardar-cliente" type="button" class="btn btn-primary">Crear Orden</button>
-                    </div>
-                </div>
+
+<!-- Modal para Nueva Mesa -->
+<div class="modal fade" id="mesas">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Pedidos por Mesa</h2>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-        </div> -->
+            <div class="modal-body">
+                <div id="contenido-mesas" class="accordion"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script src="js/bootstrap.bundle.min.js"></script>
 <script src="js/rest.js"></script>

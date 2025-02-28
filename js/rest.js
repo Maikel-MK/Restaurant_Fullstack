@@ -9,6 +9,8 @@ let cliente ={
     pedido:[]
 }
 
+let mesa = []
+
 const categorias = {
     1:"Pizzas",
     2:"Postres",
@@ -311,80 +313,83 @@ function formularioPropinas(){
 
 }
 
-function calcularPropina(){
-    console.log('calcular propina')
-    const radioSeleccionado = document.querySelector('[name="propina"]:checked').value
-    console.log(radioSeleccionado)
+function calcularPropina() {
+    console.log('calcular propina');
+    const radioSeleccionado = document.querySelector('[name="propina"]:checked').value;
+    console.log(radioSeleccionado);
 
-    const {pedido} = cliente
-    //console.log(pedido);
+    const { pedido } = cliente;
+    let subtotal = 0;
+    pedido.forEach(item => {
+        subtotal += item.cantidad * item.precio;
+    });
 
-    let subtotal = 0
-    pedido.forEach(item=>{
-        subtotal += item.cantidad * item.precio
-        console.log()
-    })
+    const propina = ((subtotal * parseInt(radioSeleccionado)) / 100)
+    const total = propina + subtotal;
 
-    const divTotales = document.createElement('div')
-    divTotales.classList.add('total-pagar')
+    const divTotales = document.createElement('div');
+    divTotales.classList.add('total-pagar');
 
-    //propina
-    const propina = ((subtotal *parseInt(radioSeleccionado))/100)
-    const total = propina + subtotal
-    //console.log(total)
+    const subtotalParrafo = document.createElement('p');
+    subtotalParrafo.classList.add('fs-3', 'fw-bold', 'mt-5');
+    subtotalParrafo.textContent = 'Subtotal Consumo: ';
 
-    //subtotal
-    const subtotalParrafo = document.createElement('p')
-    subtotalParrafo.classList.add('fs-3','fw-bold','mt-5')
-    subtotalParrafo.textContent = 'Subtotal Consumo: '
+    const subtotalP = document.createElement('span');
+    subtotalP.classList.add('fs-normal');
+    subtotalP.textContent = `$${subtotal}`;
+    subtotalParrafo.appendChild(subtotalP);
 
-    const subtotalP = document.createElement('span')
-    subtotalP.classList.add('fs-normal')
-    subtotalP.textContent = `$${subtotal}`
-    subtotalParrafo.appendChild(subtotalP)
+    const propinaParrafo = document.createElement('span');
+    propinaParrafo.classList.add('fw-normal');
+    propinaParrafo.textContent = 'Propina: ';
 
-    const propinaParrafo = document.createElement('span')
-    propinaParrafo.classList.add('fw-normal')
-    propinaParrafo.textContent = 'Propina: '
+    const propinaP = document.createElement('span');
+    propinaP.classList.add('fw-normal');
+    propinaP.textContent = `$${propina}`;
+    propinaParrafo.appendChild(propinaP);
 
-    const propinaP = document.createElement('span')
-    propinaP.classList.add('fw-normal')
-    propinaP.textContent = `$${propina}`
-    
-    propinaParrafo.appendChild(propinaP)
+    const totalParrafo = document.createElement('p');
+    totalParrafo.classList.add('fs-3', 'fw-bold');
+    totalParrafo.textContent = 'Total a Pagar: ';
 
-    //total
-    const totalParrafo = document.createElement('p')
-    totalParrafo.classList.add('fs-3','fw-bold')
-    totalParrafo.textContent = 'Total a Pagar: '
+    const totalp = document.createElement('p');
+    totalp.classList.add('fs-normal');
+    totalp.textContent = `$${total}`;
 
-    const totalp = document.createElement('p')
-    totalp.classList.add('fs-normal')
-    totalp.textContent = `$${total}`
+    const botonGuardar = document.createElement('button');
+    botonGuardar.textContent = "Guardar Pedido";
+    botonGuardar.classList.add('btn', 'btn-success', 'mt-3');
+    botonGuardar.addEventListener('click', function() {
+        guardarPedidoEnMesa(total);
+    });
 
-    const botn = document.createElement('button')
-    botn.textContent = "total"
-    botn.addEventListener('click', function() {
-        alert("Hola, Pepe");
-    })
+    totalParrafo.appendChild(totalp);
 
-
-    totalParrafo.appendChild(totalp)
-
-    const totalPagarDiv = document.querySelector('.total-pagar')
-    if(totalPagarDiv){
-        totalPagarDiv.remove()
+    const totalPagarDiv = document.querySelector('.total-pagar');
+    if (totalPagarDiv) {
+        totalPagarDiv.remove();
     }
 
-    divTotales.appendChild(subtotalParrafo)
-    divTotales.appendChild(propinaParrafo)
-    divTotales.appendChild(totalParrafo)
-    divTotales.appendChild(botn)
+    divTotales.appendChild(subtotalParrafo);
+    divTotales.appendChild(propinaParrafo);
+    divTotales.appendChild(totalParrafo);
+    divTotales.appendChild(botonGuardar);
 
-    const formulario = document.querySelector('.formulario')
-    formulario.appendChild(divTotales)
+    const formulario = document.querySelector('.formulario');
+    formulario.appendChild(divTotales);
+}
 
+function guardarPedidoEnMesa(total) {
+    const pedidoCompleto = {
+        mesa: cliente.mesa,
+        hora: cliente.hora,
+        pedido: cliente.pedido,
+        total: total
+    };
 
+    mesa.push(pedidoCompleto);
+    console.log(mesa); // Para verificar que se guardó correctamente
+    mostrarModalMesonero();
 }
 
 
@@ -441,3 +446,65 @@ function limpiarHTML(){
 //agregar en el json los datos de la mesa
 //agregar en el boton de menudespues de agregar dicho boton un boton para editar o eliminar el pedido de la mesa
 //en el modal acordeon establecer los datos guardados
+
+
+document.getElementById('mesas').addEventListener('show.bs.modal', function () {
+    mostrarPedidosEnModal();
+});
+function mostrarPedidosEnModal() {
+    const contenidoMesas = document.querySelector('#contenido-mesas');
+    contenidoMesas.innerHTML = ''; // Limpiar el contenido anterior
+
+    mesa.forEach((pedido, index) => {
+        // Crear el acordeón para cada mesa
+        const accordionItem = document.createElement('div');
+        accordionItem.classList.add('accordion-item');
+
+        // Crear el encabezado del acordeón
+        const accordionHeader = document.createElement('h2');
+        accordionHeader.classList.add('accordion-header');
+        accordionHeader.id = `heading${index}`;
+
+        const accordionButton = document.createElement('button');
+        accordionButton.classList.add('accordion-button', 'collapsed');
+        accordionButton.type = 'button';
+        accordionButton.setAttribute('data-bs-toggle', 'collapse');
+        accordionButton.setAttribute('data-bs-target', `#collapse${index}`);
+        accordionButton.setAttribute('aria-expanded', 'false');
+        accordionButton.setAttribute('aria-controls', `collapse${index}`);
+        accordionButton.textContent = `Mesa: ${pedido.mesa} - Hora: ${pedido.hora} - Total: $${pedido.total}`;
+
+        accordionHeader.appendChild(accordionButton);
+
+        // Crear el cuerpo del acordeón
+        const accordionCollapse = document.createElement('div');
+        accordionCollapse.id = `collapse${index}`;
+        accordionCollapse.classList.add('accordion-collapse', 'collapse');
+        accordionCollapse.setAttribute('aria-labelledby', `heading${index}`);
+        accordionCollapse.setAttribute('data-bs-parent', '#contenido-mesas');
+
+        const accordionBody = document.createElement('div');
+        accordionBody.classList.add('accordion-body');
+
+        // Mostrar los detalles del pedido
+        const pedidoLista = document.createElement('ul');
+        pedidoLista.classList.add('list-group');
+
+        pedido.pedido.forEach(item => {
+            const itemLista = document.createElement('li');
+            itemLista.classList.add('list-group-item');
+            itemLista.textContent = `${item.nombre} - Cantidad: ${item.cantidad} - Subtotal: $${item.cantidad * item.precio}`;
+            pedidoLista.appendChild(itemLista);
+        });
+
+        accordionBody.appendChild(pedidoLista);
+        accordionCollapse.appendChild(accordionBody);
+
+        // Agregar el encabezado y el cuerpo al acordeón
+        accordionItem.appendChild(accordionHeader);
+        accordionItem.appendChild(accordionCollapse);
+
+        // Agregar el acordeón al contenido del modal
+        contenidoMesas.appendChild(accordionItem);
+    });
+}
