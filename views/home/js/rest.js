@@ -23,46 +23,78 @@ const categorias = {
 
 btnGuardarCliente.addEventListener('click',guardarcliente)
 
-function guardarcliente(){
+function mostrarAlerta(mensaje) {
+    const existeAlerta = document.querySelector('.invalida')
+
+    if(!existeAlerta){
+        const alerta = document.createElement('div')
+        alerta.textContent = mensaje
+        alerta.classList.add('invalida')
+        document.querySelector('.modal-body form').appendChild(alerta)
+
+        setTimeout(()=>{
+            alerta.remove()
+        },3000)
+    }
+}
+
+async function guardarcliente() {
     //console.log('si guardoo')
     const mesa = document.querySelector('#mesa').value 
     const hora = document.querySelector('#hora').value 
 
-    //una foramde validar si no esta vacio sin el if es:
+    //una forma de validar si no esta vacio sin el if es:
     const camposVacios = [mesa,hora].some(i=>i=='')//some lo toma para un booleano que si al menos 1 de los que estan alli esta vacio todo saldra false
     //si todos estan vacios saldra true
 
-    //esta es la manera para que no se repitan los mensajes (en este caso los de error)
-
     if(camposVacios){
-        const existeAlerta = document.querySelector('.invalida')
+        mostrarAlerta("Los Campos Son Obligatorios")
+    } else {
+        try {
+            // Verifica si la mesa existe
+            const responseMesa = await axios.get(`api/mesas/obtener-mesa-por-mesa/${mesa}`)
+            
+            if (responseMesa.data && responseMesa.data.textOk) { // Si la mesa existe
+                mostrarAlerta("La mesa ya está registrada")
+            } else if (responseMesa.data && responseMesa.data.error) { // Si la mesa no existe
+                // Procede con el guardado
+                cliente = {...cliente,mesa,hora}
 
-        if(!existeAlerta){
-            const alerta = document.createElement('div')
-            alerta.textContent = "Los Campos Son Obligatorios"
-            alerta.classList.add('invalida')
-            document.querySelector('.modal-body form').appendChild(alerta)
-    
-            setTimeout(()=>{
-                alerta.remove()
-            },3000)
+                // Oculta la ventana modal
+                var modalFormulario = document.querySelector('#formulario')
+                var modal = bootstrap.Modal.getInstance(modalFormulario)
+                modal.hide()
+
+                mostrarSecciones()
+                obtenerMenu()
+            } else {
+                console.error('Respuesta inesperada:', responseMesa.data);
+                mostrarAlerta("Ocurrió un error al verificar la mesa")
+            }
+        } catch (error) {
+            if (error.response && error.response.status === 404) {
+                // Si la mesa no existe, pero el servidor respondió con un 404
+                cliente = {...cliente,mesa,hora}
+                console.log('catch')
+                // Oculta la ventana modal
+                var modalFormulario = document.querySelector('#formulario')
+                var modal = bootstrap.Modal.getInstance(modalFormulario)
+                modal.hide()
+
+                mostrarSecciones()
+                obtenerMenu()
+            } else {
+                console.error('Error desconocido:', error.message);
+                mostrarAlerta("Ocurrió un error al verificar la mesa")
+            }
         }
-        
-    }else{
-        //en caso que los campos esten llenos
-        //console.log('campos llenos') 
-        cliente = {...cliente,mesa,hora}
-
-        //cuando le de al boton de cerrar oculte la ventana modal
-
-        var modalFormulario = document.querySelector('#formulario')
-        var modal = bootstrap.Modal.getInstance(modalFormulario)
-        modal.hide()
-
-        mostrarSecciones()
-        obtenerMenu()
     }
 }
+
+
+
+
+
 function mostrarSecciones(){
     const secciones = document.querySelectorAll('.d-none')
     //console.log(secciones)
@@ -199,68 +231,80 @@ limpiarHTML()
 
 }
 
-function actualizarResumen() {
-    const contenido = document.querySelector('#resumen .contenido');
-    contenido.innerHTML = ''; // Limpiar el contenido anterior
 
-    if (cliente.pedido.length > 0) {
-        const resumen = document.createElement('div');
-        resumen.classList.add('col-md-6', 'card', 'py-5', 'px-3', 'shadow');
+function actualizarResumen(){
+    const resumen  = document.createElement('div')
+    resumen.classList.add('col-md-6','card','py-5','px-3','shadow')
 
-        // Mostrar mesa y hora
-        const mesa = document.createElement('p');
-        mesa.textContent = `Mesa: ${cliente.mesa}`;
-        mesa.classList.add('fw-bold');
+    //mostrar mesa
+    const mesa = document.createElement('p')
+    mesa.textContent = `Mesa: ${cliente.mesa}`
+    mesa.classList.add('fw-bold')
 
-        const hora = document.createElement('p');
-        hora.textContent = `Hora: ${cliente.hora}`;
-        hora.classList.add('fw-bold');
+    //mostrar Hora
+    const hora = document.createElement('p')
+    hora.textContent = `Hora: ${cliente.hora}`
+    hora.classList.add('fw-bold')
 
-        // Mostrar pedidos
-        const heading = document.createElement('h3');
-        heading.textContent = 'Pedidos:';
-        heading.classList.add('my-4');
+    //mostrar items del menu cosumido
+    const heading = document.createElement('h3')
+    heading.textContent = `Pedidos:`
+    heading.classList.add('my-4')
 
-        const grupo = document.createElement('ul');
-        grupo.classList.add('list-group');
+    //extraer pedido del objeto cliente
 
-        cliente.pedido.forEach(item => {
-            const lista = document.createElement('li');
-            lista.classList.add('list-group-item');
+    const {pedido} = cliente
+    console.log(pedido)
+    const grupo = document.createElement('ul')
+    grupo.classList.add('list-group')
 
-            const nombreP = document.createElement('h4');
-            nombreP.classList.add('text-center', 'my-4');
-            nombreP.textContent = `Nombre: ${item.nombre}`;
+    pedido.forEach(i=>{
+        
+        const {nombre,precio,cantidad,id} = i
+        const lista = document.createElement('li')
+        lista.classList.add('list-group-item')
 
-            const precioP = document.createElement('p');
-            precioP.classList.add('fw-bold');
-            precioP.textContent = `Precio: $${item.precio}`;
+        const nombreP = document.createElement('h4')
+        nombreP.classList.add('text-center', 'my-4')
+        nombreP.textContent = `Nombre : ${nombre}`
 
-            const cantidadP = document.createElement('p');
-            cantidadP.classList.add('fw-bold');
-            cantidadP.textContent = `Cantidad: ${item.cantidad}`;
+        const precioP = document.createElement('p')
+        precioP.classList.add('fw-bold')
+        precioP.textContent = `Precio : $ ${precio}`
 
-            const subtotalP = document.createElement('p');
-            subtotalP.classList.add('fw-bold');
-            subtotalP.textContent = `SubTotal: $${item.cantidad * item.precio}`;
+        const CantidadP = document.createElement('p')
+        CantidadP.classList.add('fw-bold')
+        CantidadP.textContent = `Cantidad : ${cantidad}`
 
-            lista.appendChild(nombreP);
-            lista.appendChild(precioP);
-            lista.appendChild(cantidadP);
-            lista.appendChild(subtotalP);
+        const subtotalP = document.createElement('p')
+        subtotalP.classList.add('fw-bold')
+        subtotalP.textContent = `SubTotal: ${calcularSubtotal(i)}`
 
-            grupo.appendChild(lista);
-        });
+        const btnEliminar = document.createElement('button')
+        btnEliminar.classList.add('btn','btn-danger')
+        btnEliminar.textContent = 'Eliminar Pedido'
 
-        resumen.appendChild(mesa);
-        resumen.appendChild(hora);
-        resumen.appendChild(heading);
-        resumen.appendChild(grupo);
+        btnEliminar.onclick = function(){
+            eliminarProducto(id)
+        }
 
-        contenido.appendChild(resumen);
-    } else {
-        mensajePedidoVacio();
-    }
+        lista.appendChild(nombreP)
+        lista.appendChild(precioP)
+        lista.appendChild(CantidadP)
+        lista.appendChild(subtotalP)
+        lista.appendChild(btnEliminar)
+
+        grupo.appendChild(lista)
+    })
+
+    resumen.appendChild(mesa)
+    resumen.appendChild(hora)
+    resumen.appendChild(heading)
+    resumen.appendChild(grupo)
+
+    contenido.appendChild(resumen)
+
+    formularioPropinas()
 }
 
 function formularioPropinas(){
@@ -389,52 +433,64 @@ function calcularPropina() {
     formulario.appendChild(divTotales);
 }
 
-    async function guardarPedidoEnMesa(total) {
-        const { mesa, hora, pedido } = cliente;
-    
-        // Calcular la propina (puedes ajustar esto según tu lógica)
-        const propina = total
-    
-        // Estructurar los datos para enviar al backend
-        const datosReserva = {
-            mesa: parseInt(mesa), // Asegúrate de que sea un número
-            hora,
-            pedidos: pedido.map(item => ({
-                id: item.id,
-                producto: item.nombre,
-                cantidad: item.cantidad,
-                precio: item.precio,
-                subtotal: item.cantidad * item.precio
-            })),
-            propina,
-            total
-        };
-    
-        try {
-            // Enviar los datos al backend
-            const respuesta = await axios.post('api/mesas/reservaMesa', datosReserva);
-    
-            // Mostrar un mensaje de éxito
-            console.log('Reserva guardada correctamente:', respuesta.data);
-    
-            // Limpiar el estado del cliente después de guardar
-            cliente = {
-                mesa: '',
-                hora: '',
-                pedido: []
-            };
-    
-            // Actualizar la interfaz de usuario
-            limpiarHTML();
-            mensajePedidoVacio();
-        } catch (error) {
-            console.error('Error al guardar la reserva:', error.message);
-    
-            // Mostrar un mensaje de error al usuario
-            alert('Hubo un error al guardar la reserva. Por favor, inténtalo de nuevo.');
-        }
-    }
+async function guardarPedidoEnMesa(total) {
+    const { mesa, hora, pedido } = cliente;
 
+    // Calcular la propina (puedes ajustar esto según tu lógica)
+    const propina = total;
+
+    // Estructurar los datos para enviar al backend
+    const datosReserva = {
+        mesa: parseInt(mesa), // Asegúrate de que sea un número
+        hora,
+        pedidos: pedido.map(item => ({
+            id: item.id,
+            producto: item.nombre,
+            cantidad: item.cantidad,
+            precio: item.precio,
+            subtotal: item.cantidad * item.precio
+        })),
+        propina,
+        total
+    };
+
+    try {
+        // Verificar si la mesa ya existe en la base de datos
+        const respuestaExistente = await axios.get(`api/mesas/obtener-mesa-por-mesa/${mesa}`);
+        
+        console.log('Respuesta recibida:', respuestaExistente.data);
+        const mesaExistente = respuestaExistente.data.data;
+
+        let respuesta;
+
+        if (mesaExistente) {
+            // Si la mesa existe, actualizarla
+            console.log('ID de la mesa a actualizar:', mesaExistente.id); // Verificar el ID
+            respuesta = await axios.put(`api/mesas/actualizar-mesa/${mesaExistente.id}`, datosReserva);
+            console.log('Reserva actualizada correctamente:', respuesta.data);
+        } else {
+            // Si la mesa no existe, crear una nueva reserva
+            respuesta = await axios.post('api/mesas/reservaMesa', datosReserva);
+            console.log('Reserva guardada correctamente:', respuesta.data);
+        }
+
+        // Limpiar el estado del cliente después de guardar
+        cliente = {
+            mesa: '',
+            hora: '',
+            pedido: []
+        };
+
+        // Actualizar la interfaz de usuario
+        limpiarHTML();
+        mensajePedidoVacio();
+    } catch (error) {
+        console.error('Error al guardar/actualizar la reserva:', error.message);
+
+        // Mostrar un mensaje de error al usuario
+        alert('Hubo un error al guardar/actualizar la reserva. Por favor, inténtalo de nuevo.');
+    }
+}
 
 
 function calcularSubtotal(i){
@@ -610,7 +666,7 @@ async function eliminarMesa(id) {
 
 async function editarMesa(id) {
     try {
-        // Obtener los datos de la mesa desde el backend
+        console.log('ID de la mesa a editar:', id); // Verificar el ID
         const respuesta = await axios.get(`api/mesas/obtener-mesa/${id}`);
         const mesa = respuesta.data.data;
 

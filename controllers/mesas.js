@@ -30,6 +30,7 @@ mesaRouter.post('/reservaMesa', async (request, response) => {
         console.error('Error al guardar la reserva:', error.message);
         return response.status(500).json({ error: 'Error interno del servidor' });
     }
+    console.log('Solicitud recibida en /api/mesas/reservaMesa');
 });
 
 // Obtener todas las mesas reservadas
@@ -59,6 +60,42 @@ mesaRouter.delete('/eliminar-mesa/:id', async (request, response) => {
     }
 });
 
+// Obtener una mesa por ID
+mesaRouter.get('/obtener-mesa/:id', async (request, response) => {
+    try {
+        const id = request.params.id;
+        const mesa = await Mesa.findById(id);
+
+        if (!mesa) {
+            return response.status(404).json({ error: 'Mesa no encontrada' });
+        }
+
+        return response.status(200).json({ textOk: true, data: mesa });
+    } catch (error) {
+        console.error('Error al obtener la mesa:', error.message);
+        return response.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+// Obtener una mesa por número de mesa
+mesaRouter.get('/obtener-mesa-por-mesa/:mesa', async (request, response) => {
+    console.log('Solicitud recibida para obtener la mesa con número:', request.params.mesa);
+    try {
+        const mesaNumero = request.params.mesa;
+        const mesa = await Mesa.findOne({ mesa: mesaNumero });
+
+        if (!mesa) {
+            return response.status(404).json({ error: 'Mesa no encontrada' });
+        }
+
+        return response.status(200).json({ textOk: true, data: mesa });
+    } catch (error) {
+        console.error('Error al obtener la mesa:', error.message);
+        return response.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
+
 // Actualizar una mesa por ID
 mesaRouter.put('/actualizar-mesa/:id', async (request, response) => {
     try {
@@ -76,6 +113,8 @@ mesaRouter.put('/actualizar-mesa/:id', async (request, response) => {
         console.error('Error al actualizar la mesa:', error.message);
         return response.status(500).json({ error: 'Error interno del servidor' });
     }
+    console.log('Solicitud recibida en /api/mesas/actualizar-mesa/:id');
 });
+
 
 module.exports = mesaRouter
