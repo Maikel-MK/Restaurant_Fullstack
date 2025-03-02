@@ -570,7 +570,25 @@ function mostrarMesasEnModal(mesas) {
             pedidosLista.appendChild(itemLista);
         });
 
+        // Botones de editar y eliminar
+        const botonesAccion = document.createElement('div');
+        botonesAccion.classList.add('d-flex', 'justify-content-end', 'mt-3');
+
+        const btnEditar = document.createElement('button');
+        btnEditar.classList.add('btn', 'btn-warning', 'me-2');
+        btnEditar.textContent = 'Editar';
+        btnEditar.onclick = () => editarMesa(mesa.id); // Función para editar
+
+        const btnEliminar = document.createElement('button');
+        btnEliminar.classList.add('btn', 'btn-danger');
+        btnEliminar.textContent = 'Eliminar';
+        btnEliminar.onclick = () => eliminarMesa(mesa.id); // Función para eliminar
+
+        botonesAccion.appendChild(btnEditar);
+        botonesAccion.appendChild(btnEliminar);
+
         accordionBody.appendChild(pedidosLista);
+        accordionBody.appendChild(botonesAccion);
         accordionCollapse.appendChild(accordionBody);
 
         // Agregar el encabezado y el cuerpo al acordeón
@@ -583,4 +601,21 @@ function mostrarMesasEnModal(mesas) {
 }
 
 // Llamar a la función cuando se abra el modal
-document.getElementById('mesas').addEventListener('show.bs.modal', obtenerMesasReservadas);
+const mesas = document.getElementById('mesas')
+mesas.addEventListener('show.bs.modal', obtenerMesasReservadas);
+
+async function eliminarMesa(id) {
+    try {
+        const confirmacion = confirm('¿Estás seguro de que deseas eliminar esta mesa?');
+        if (!confirmacion) return;
+
+        const respuesta = await axios.delete(`api/mesas/eliminar-mesa/${id}`);
+        console.log('Mesa eliminada:', respuesta.data);
+
+        // Actualizar la lista de mesas en el modal
+        obtenerMesasReservadas();
+    } catch (error) {
+        console.error('Error al eliminar la mesa:', error.message);
+        alert('Hubo un error al eliminar la mesa. Por favor, inténtalo de nuevo.');
+    }
+}
