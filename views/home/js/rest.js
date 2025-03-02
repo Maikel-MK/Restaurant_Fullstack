@@ -401,17 +401,52 @@ function calcularPropina() {
     formulario.appendChild(divTotales);
 }
 
-function guardarPedidoEnMesa(total) {
-    const pedidoCompleto = {
-        mesa: cliente.mesa,
-        hora: cliente.hora,
-        pedido: cliente.pedido,
-        total: total
-    };
+    async function guardarPedidoEnMesa(total) {
+        const { mesa, hora, pedido } = cliente;
+    
+        // Calcular la propina (puedes ajustar esto según tu lógica)
+        const propina = total
+    
+        // Estructurar los datos para enviar al backend
+        const datosReserva = {
+            mesa: parseInt(mesa), // Asegúrate de que sea un número
+            hora,
+            pedidos: pedido.map(item => ({
+                id: item.id,
+                producto: item.nombre,
+                cantidad: item.cantidad,
+                precio: item.precio,
+                subtotal: item.cantidad * item.precio
+            })),
+            propina,
+            total
+        };
+    
+        try {
+            // Enviar los datos al backend
+            const respuesta = await axios.post('api/mesas/reservaMesa', datosReserva);
+    
+            // Mostrar un mensaje de éxito
+            console.log('Reserva guardada correctamente:', respuesta.data);
+    
+            // Limpiar el estado del cliente después de guardar
+            cliente = {
+                mesa: '',
+                hora: '',
+                pedido: []
+            };
+    
+            // Actualizar la interfaz de usuario
+            limpiarHTML();
+            mensajePedidoVacio();
+        } catch (error) {
+            console.error('Error al guardar la reserva:', error.message);
+    
+            // Mostrar un mensaje de error al usuario
+            alert('Hubo un error al guardar la reserva. Por favor, inténtalo de nuevo.');
+        }
+    }
 
-    mesa.push(pedidoCompleto);
-    console.log(mesa); // Para verificar que se guardó correctamente
-}
 
 
 function calcularSubtotal(i){
@@ -468,17 +503,32 @@ function limpiarHTML(){
 //agregar en el boton de menudespues de agregar dicho boton un boton para editar o eliminar el pedido de la mesa
 //en el modal acordeon establecer los datos guardados
 
+// Función para obtener y mostrar las mesas reservadas
+async function obtenerMesasReservadas() {
+    try {
+        const url = 'api/mesas/lista-mesas';
+        console.log('Realizando solicitud a:', url);
 
-const mesas = document.getElementById('mesas')
+        const respuesta = await axios.get(url);
+        console.log('Respuesta recibida:', respuesta.data);
 
-mesas.addEventListener('show.bs.modal', function () {
-    mostrarPedidosEnModal();
-});
-function mostrarPedidosEnModal() {
+        // Verificar si la respuesta tiene la estructura esperada
+        if (respuesta.data && respuesta.data.data && Array.isArray(respuesta.data.data)) {
+            mostrarMesasEnModal(respuesta.data.data);
+        } else {
+            console.error('La respuesta no tiene la estructura esperada:', respuesta.data);
+        }
+    } catch (error) {
+        console.error('Error al obtener las mesas reservadas:', error.message);
+    }
+}
+
+// Función para mostrar las mesas en el modal
+function mostrarMesasEnModal(mesas) {
     const contenidoMesas = document.querySelector('#contenido-mesas');
     contenidoMesas.innerHTML = ''; // Limpiar el contenido anterior
 
-    mesa.forEach((pedido, index) => {
+    mesas.forEach((mesa, index) => {
         // Crear el acordeón para cada mesa
         const accordionItem = document.createElement('div');
         accordionItem.classList.add('accordion-item');
@@ -495,7 +545,7 @@ function mostrarPedidosEnModal() {
         accordionButton.setAttribute('data-bs-target', `#collapse${index}`);
         accordionButton.setAttribute('aria-expanded', 'false');
         accordionButton.setAttribute('aria-controls', `collapse${index}`);
-        accordionButton.textContent = `Mesa: ${pedido.mesa} - Hora: ${pedido.hora} - Total: $${pedido.total}`;
+        accordionButton.textContent = `Mesa: ${mesa.mesa} - Hora: ${mesa.hora} - Total: $${mesa.total}`;
 
         accordionHeader.appendChild(accordionButton);
 
@@ -509,18 +559,18 @@ function mostrarPedidosEnModal() {
         const accordionBody = document.createElement('div');
         accordionBody.classList.add('accordion-body');
 
-        // Mostrar los detalles del pedido
-        const pedidoLista = document.createElement('ul');
-        pedidoLista.classList.add('list-group');
+        // Mostrar los detalles de los pedidos
+        const pedidosLista = document.createElement('ul');
+        pedidosLista.classList.add('list-group');
 
-        pedido.pedido.forEach(item => {
+        mesa.pedidos.forEach(pedido => {
             const itemLista = document.createElement('li');
             itemLista.classList.add('list-group-item');
-            itemLista.textContent = `${item.nombre} - Cantidad: ${item.cantidad} - Subtotal: $${item.cantidad * item.precio}`;
-            pedidoLista.appendChild(itemLista);
+            itemLista.textContent = `${pedido.producto} - Cantidad: ${pedido.cantidad} - Subtotal: $${pedido.subtotal}`;
+            pedidosLista.appendChild(itemLista);
         });
 
-        accordionBody.appendChild(pedidoLista);
+        accordionBody.appendChild(pedidosLista);
         accordionCollapse.appendChild(accordionBody);
 
         // Agregar el encabezado y el cuerpo al acordeón
@@ -531,3 +581,6 @@ function mostrarPedidosEnModal() {
         contenidoMesas.appendChild(accordionItem);
     });
 }
+
+// Llamar a la función cuando se abra el modal
+document.getElementById('mesas').addEventListener('show.bs.modal', obtenerMesasReservadas);

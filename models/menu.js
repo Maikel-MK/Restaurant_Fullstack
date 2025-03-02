@@ -18,19 +18,19 @@ const menuSchema = new mongoose.Schema({
         type: Number,
         required: [true, 'La categoría es obligatoria'] // Validación: categoría es requerida
     }
-});
+})
 
 // Transformar el objeto devuelto por Mongoose
 menuSchema.set('toJSON', {
     transform: (document, returnedObject) => {
-        returnedObject.id = returnedObject._id.toString(); // Convertir _id a id
-        delete returnedObject._id; // Eliminar _id
-        delete returnedObject.__v; // Eliminar __v
+        returnedObject.id = returnedObject._id.toString() // Convertir _id a id
+        delete returnedObject._id // Eliminar _id
+        delete returnedObject.__v // Eliminar __v
     }
-});
+})
 
 // Crear el modelo Menu basado en el esquema
-const Menu = mongoose.model('Menu', menuSchema);
+const Menu = mongoose.model('Menu', menuSchema)
 
 // Exportar el modelo
-module.exports = Menu;
+module.exports = Menu

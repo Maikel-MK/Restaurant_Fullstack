@@ -1,41 +1,48 @@
-const { request, response } = require('../app')
+const express = require('express');
+const mesaRouter = express.Router();
+const Mesa = require('../models/mesa');
 
-const mesaRouter = require('express').Router()
-const mesa = require('../models/mesa')
+// Registrar una nueva reserva de mesa
+mesaRouter.post('/reservaMesa', async (request, response) => {
+    const { mesa, hora, pedidos, propina, total } = request.body;
 
-// router: CRUD
+    // Validar que todos los campos estén presentes
+    if (!mesa || !hora || !pedidos || !propina || !total) {
+        return response.status(400).json({ error: 'Todos los campos son obligatorios' });
+    }
 
+    try {
+        // Crear una nueva instancia de Mesa
+        const nuevaMesa = new Mesa({
+            mesa,
+            hora,
+            pedidos,
+            propina,
+            total
+        });
 
-//registrar lo que envia el usuario
-// mesaRouter.post('/registroUsuarios',(request,response)=>{
-//     const {nombre,correo,password,password2,rol} = request.body
-//     console.log(nombre,correo,password,password2,rol)
+        // Guardar en la base de datos
+        await nuevaMesa.save();
 
-//     if(!nombre || !correo || !password || !password2 || !rol){
+        // Devolver una respuesta exitosa
+        return response.status(201).json({ message: 'Reserva guardada correctamente', data: nuevaMesa });
+    } catch (error) {
+        console.error('Error al guardar la reserva:', error.message);
+        return response.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
 
-//         return response.status(400).json({error:'Los datos no pueden estar Incompletos'})
-//     }else{
-//         //guardar en la bd
-//         let usuario = new mesa()
+// Obtener todas las mesas reservadas
+mesaRouter.get('/lista-mesas', async (request, response) => {
+    try {
+        const mesas = await Mesa.find();
+        return response.status(200).json({ textOk: true, data: mesas });
+    } catch (error) {
+        console.error('Error al obtener las mesas:', error.message);
+        return response.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
 
-//         usuario.nombre = nombre
-//         usuario.correo = correo 
-//         usuario.password = password
-//         usuario.rol = rol
-        
-
-//         async function guardarUsuario() {
-//             await usuario.save()
-//             const usuarios = await mesa.find()
-//             console.log(usuarios)
-//         }
-
-//         guardarUsuario().catch(console.error)
-
-//         return response.status(200).json({message:'Usuario Registrado Correctamente'})
-//     }
-
-// })
 
 // //consultar un usuario
 // mesaRouter.get('/consultar-mesa', async (request, response) => {
