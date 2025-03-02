@@ -199,80 +199,68 @@ limpiarHTML()
 
 }
 
-function actualizarResumen(){
-    const resumen  = document.createElement('div')
-    resumen.classList.add('col-md-6','card','py-5','px-3','shadow')
+function actualizarResumen() {
+    const contenido = document.querySelector('#resumen .contenido');
+    contenido.innerHTML = ''; // Limpiar el contenido anterior
 
-    //mostrar mesa
-    const mesa = document.createElement('p')
-    mesa.textContent = `Mesa: ${cliente.mesa}`
-    mesa.classList.add('fw-bold')
+    if (cliente.pedido.length > 0) {
+        const resumen = document.createElement('div');
+        resumen.classList.add('col-md-6', 'card', 'py-5', 'px-3', 'shadow');
 
-    //mostrar Hora
-    const hora = document.createElement('p')
-    hora.textContent = `Hora: ${cliente.hora}`
-    hora.classList.add('fw-bold')
+        // Mostrar mesa y hora
+        const mesa = document.createElement('p');
+        mesa.textContent = `Mesa: ${cliente.mesa}`;
+        mesa.classList.add('fw-bold');
 
-    //mostrar items del menu cosumido
-    const heading = document.createElement('h3')
-    heading.textContent = `Pedidos:`
-    heading.classList.add('my-4')
+        const hora = document.createElement('p');
+        hora.textContent = `Hora: ${cliente.hora}`;
+        hora.classList.add('fw-bold');
 
-    //extraer pedido del objeto cliente
+        // Mostrar pedidos
+        const heading = document.createElement('h3');
+        heading.textContent = 'Pedidos:';
+        heading.classList.add('my-4');
 
-    const {pedido} = cliente
-    console.log(pedido)
-    const grupo = document.createElement('ul')
-    grupo.classList.add('list-group')
+        const grupo = document.createElement('ul');
+        grupo.classList.add('list-group');
 
-    pedido.forEach(i=>{
-        
-        const {nombre,precio,cantidad,id} = i
-        const lista = document.createElement('li')
-        lista.classList.add('list-group-item')
+        cliente.pedido.forEach(item => {
+            const lista = document.createElement('li');
+            lista.classList.add('list-group-item');
 
-        const nombreP = document.createElement('h4')
-        nombreP.classList.add('text-center', 'my-4')
-        nombreP.textContent = `Nombre : ${nombre}`
+            const nombreP = document.createElement('h4');
+            nombreP.classList.add('text-center', 'my-4');
+            nombreP.textContent = `Nombre: ${item.nombre}`;
 
-        const precioP = document.createElement('p')
-        precioP.classList.add('fw-bold')
-        precioP.textContent = `Precio : $ ${precio}`
+            const precioP = document.createElement('p');
+            precioP.classList.add('fw-bold');
+            precioP.textContent = `Precio: $${item.precio}`;
 
-        const CantidadP = document.createElement('p')
-        CantidadP.classList.add('fw-bold')
-        CantidadP.textContent = `Cantidad : ${cantidad}`
+            const cantidadP = document.createElement('p');
+            cantidadP.classList.add('fw-bold');
+            cantidadP.textContent = `Cantidad: ${item.cantidad}`;
 
-        const subtotalP = document.createElement('p')
-        subtotalP.classList.add('fw-bold')
-        subtotalP.textContent = `SubTotal: ${calcularSubtotal(i)}`
+            const subtotalP = document.createElement('p');
+            subtotalP.classList.add('fw-bold');
+            subtotalP.textContent = `SubTotal: $${item.cantidad * item.precio}`;
 
-        const btnEliminar = document.createElement('button')
-        btnEliminar.classList.add('btn','btn-danger')
-        btnEliminar.textContent = 'Eliminar Pedido'
+            lista.appendChild(nombreP);
+            lista.appendChild(precioP);
+            lista.appendChild(cantidadP);
+            lista.appendChild(subtotalP);
 
-        btnEliminar.onclick = function(){
-            eliminarProducto(id)
-        }
+            grupo.appendChild(lista);
+        });
 
-        lista.appendChild(nombreP)
-        lista.appendChild(precioP)
-        lista.appendChild(CantidadP)
-        lista.appendChild(subtotalP)
-        lista.appendChild(btnEliminar)
+        resumen.appendChild(mesa);
+        resumen.appendChild(hora);
+        resumen.appendChild(heading);
+        resumen.appendChild(grupo);
 
-        grupo.appendChild(lista)
-    })
-
-    resumen.appendChild(mesa)
-    resumen.appendChild(hora)
-    resumen.appendChild(heading)
-    resumen.appendChild(grupo)
-
-    contenido.appendChild(resumen)
-
-    formularioPropinas()
-
+        contenido.appendChild(resumen);
+    } else {
+        mensajePedidoVacio();
+    }
 }
 
 function formularioPropinas(){
@@ -618,4 +606,49 @@ async function eliminarMesa(id) {
         console.error('Error al eliminar la mesa:', error.message);
         alert('Hubo un error al eliminar la mesa. Por favor, inténtalo de nuevo.');
     }
+}
+
+async function editarMesa(id) {
+    try {
+        // Obtener los datos de la mesa desde el backend
+        const respuesta = await axios.get(`api/mesas/obtener-mesa/${id}`);
+        const mesa = respuesta.data.data;
+
+        // Cargar los datos en la interfaz
+        cargarDatosEnInterfaz(mesa);
+    } catch (error) {
+        console.error('Error al obtener los datos de la mesa:', error.message);
+        alert('Hubo un error al cargar la mesa. Por favor, inténtalo de nuevo.');
+    }
+}
+
+function cargarDatosEnInterfaz(mesa) {
+    // Cargar la mesa y la hora
+    document.querySelector('#mesa').value = mesa.mesa;
+    document.querySelector('#hora').value = mesa.hora;
+
+    // Limpiar el pedido actual
+    cliente.pedido = [];
+
+    // Cargar los pedidos
+    mesa.pedidos.forEach(pedido => {
+        const producto = {
+            id: pedido.id,
+            nombre: pedido.producto,
+            precio: pedido.precio,
+            cantidad: pedido.cantidad
+        };
+
+        // Agregar el producto al pedido del cliente
+        cliente.pedido.push(producto);
+
+        // Actualizar la interfaz para reflejar el pedido
+        const inputCantidad = document.querySelector(`#producto-${producto.id}`);
+        if (inputCantidad) {
+            inputCantidad.value = producto.cantidad;
+        }
+    });
+
+    // Actualizar el resumen del pedido
+    actualizarResumen();
 }

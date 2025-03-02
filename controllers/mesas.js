@@ -58,4 +58,24 @@ mesaRouter.delete('/eliminar-mesa/:id', async (request, response) => {
         return response.status(500).json({ error: 'Error interno del servidor' });
     }
 });
+
+// Actualizar una mesa por ID
+mesaRouter.put('/actualizar-mesa/:id', async (request, response) => {
+    try {
+        const id = request.params.id;
+        const datosActualizados = request.body;
+
+        const mesaActualizada = await Mesa.findByIdAndUpdate(id, datosActualizados, { new: true });
+
+        if (!mesaActualizada) {
+            return response.status(404).json({ error: 'Mesa no encontrada' });
+        }
+
+        return response.status(200).json({ message: 'Mesa actualizada correctamente', data: mesaActualizada });
+    } catch (error) {
+        console.error('Error al actualizar la mesa:', error.message);
+        return response.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
+
 module.exports = mesaRouter
