@@ -1,158 +1,166 @@
-const { request, response } = require('../app')
+const express = require('express');
+const menuRouter = express.Router();
+const Menu = require('../models/menu'); // Asegúrate de que el modelo esté correctamente importado
 
-const usersRouter = require('express').Router()
-const User = require('../models/registroUsuario')
+// Ruta para obtener todos los menús
+menuRouter.get('/lista-menu', async (request, response) => {
+    try {
+        // Obtener todos los menús desde la base de datos
+        const listado = await Menu.find();
 
-// router: CRUD
+        // Si no hay menús, devolver un mensaje indicando que no hay datos
+        if (listado.length === 0) {
+            return response.status(404).json({ textOk: false, message: 'No se encontraron menús' });
+        }
 
+        // Devolver la lista de menús
+        return response.status(200).json({ textOk: true, data: listado });
+
+    } catch (error) {
+        // Manejar errores y devolver un mensaje de error
+        console.error('Error al obtener la lista de menús:', error.message);
+        return response.status(500).json({ textOk: false, error: 'Error interno del servidor' });
+    }
+});
 
 //registrar lo que envia el usuario
-usersRouter.post('/registroUsuarios',(request,response)=>{
-    const {nombre,correo,password,password2,rol} = request.body
-    console.log(nombre,correo,password,password2,rol)
+// menuRouter.post('/registroUsuarios',(request,response)=>{
+//     const {nombre,correo,password,password2,rol} = request.body
+//     console.log(nombre,correo,password,password2,rol)
 
-    if(!nombre || !correo || !password || !password2 || !rol){
+//     if(!nombre || !correo || !password || !password2 || !rol){
 
-        return response.status(400).json({error:'Los datos no pueden estar Incompletos'})
-    }else{
-        //guardar en la bd
-        let usuario = new User()
+//         return response.status(400).json({error:'Los datos no pueden estar Incompletos'})
+//     }else{
+//         //guardar en la bd
+//         let usuario = new menu()
 
-        usuario.nombre = nombre
-        usuario.correo = correo 
-        usuario.password = password
-        usuario.rol = rol
+//         usuario.nombre = nombre
+//         usuario.correo = correo 
+//         usuario.password = password
+//         usuario.rol = rol
         
 
-        async function guardarUsuario() {
-            await usuario.save()
-            const usuarios = await User.find()
-            console.log(usuarios)
-        }
+//         async function guardarUsuario() {
+//             await usuario.save()
+//             const usuarios = await menu.find()
+//             console.log(usuarios)
+//         }
 
-        guardarUsuario().catch(console.error)
+//         guardarUsuario().catch(console.error)
 
-        return response.status(200).json({message:'Usuario Registrado Correctamente'})
-    }
+//         return response.status(200).json({message:'Usuario Registrado Correctamente'})
+//     }
 
-})
+// })
 
-//consultar un usuario
-usersRouter.get('/consultar-User', async (request, response) => {
-    try {
-        const { id, correo } = request.query
-        console.log('Parámetros recibidos:', { id, correo }) // Depuración
+// //consultar un usuario
+// menuRouter.get('/consultar-menu', async (request, response) => {
+//     try {
+//         const { id, correo } = request.query
+//         console.log('Parámetros recibidos:', { id, correo }) // Depuración
 
-        // Validar que se proporcione al menos un parámetro (id o correo)
-        if (!id && !correo) {
-            return response.status(400).json({ error: 'Se requiere el ID o el correo del usuario.' })
-        }
+//         // Validar que se proporcione al menos un parámetro (id o correo)
+//         if (!id && !correo) {
+//             return response.status(400).json({ error: 'Se requiere el ID o el correo del usuario.' })
+//         }
 
-        let usuario
+//         let usuario
 
-        // Buscar el usuario por ID o correo
-        if (id) {
-            console.log('Buscando usuario por ID:', id) // Depuración
-            usuario = await User.findById(id)
-        } else if (correo) {
-            console.log('Buscando usuario por correo:', correo) // Depuración
-            usuario = await User.findOne({ correo: correo })
-        }
+//         // Buscar el usuario por ID o correo
+//         if (id) {
+//             console.log('Buscando usuario por ID:', id) // Depuración
+//             usuario = await menu.findById(id)
+//         } else if (correo) {
+//             console.log('Buscando usuario por correo:', correo) // Depuración
+//             usuario = await menu.findOne({ correo: correo })
+//         }
 
-        console.log('Usuario encontrado:', usuario) // Depuración
+//         console.log('Usuario encontrado:', usuario) // Depuración
 
-        // Verificar si el usuario fue encontrado
-        if (!usuario) {
-            return response.status(404).json({ error: 'Usuario no encontrado.' })
-        }
+//         // Verificar si el usuario fue encontrado
+//         if (!usuario) {
+//             return response.status(404).json({ error: 'Usuario no encontrado.' })
+//         }
 
-        // Devolver el usuario encontrado
-        return response.status(200).json({ textOk: true, data: usuario })
-    } catch (error) {
-        console.error('Error al consultar el usuario:', error)
-        return response.status(500).json({ error: 'Error interno del servidor.' })
-    }
-})
+//         // Devolver el usuario encontrado
+//         return response.status(200).json({ textOk: true, data: usuario })
+//     } catch (error) {
+//         console.error('Error al consultar el usuario:', error)
+//         return response.status(500).json({ error: 'Error interno del servidor.' })
+//     }
+// })
 
-//editar un usuario
-usersRouter.post('/editar-user', async(request,response)=>{
+// //editar un usuario
+// menuRouter.post('/editar-menu', async(request,response)=>{
 
-    try {
-        const {id,nombre,correo,password,password2,rol} = request.body
+//     try {
+//         const {id,nombre,correo,password,password2,rol} = request.body
 
-        if(!nombre && !correo && !password && !password2 && !rol){
+//         if(!nombre && !correo && !password && !password2 && !rol){
 
-            return response.status(400).json({error:'Todos los campos son obligatorios'})
-        }else{
-            const updateUser = await User.findByIdAndUpdate({_id:id},{nombre:nombre,correo:correo,password:password,rol:rol})
+//             return response.status(400).json({error:'Todos los campos son obligatorios'})
+//         }else{
+//             const updatemenu = await menu.findByIdAndUpdate({_id:id},{nombre:nombre,correo:correo,password:password,rol:rol})
 
-            await updateUser.save()
+//             await updatemenu.save()
 
-            return response.status(200).json({message:'Usuario editado correctamente'}) 
-        }
+//             return response.status(200).json({message:'Usuario editado correctamente'}) 
+//         }
 
-    } catch (error) {
-        return response.status(400).json({error:'error al editar el usuario'})
-    }
-})
+//     } catch (error) {
+//         return response.status(400).json({error:'error al editar el usuario'})
+//     }
+// })
 
-//eliminar un usuario
-usersRouter.post('/eliminar-User',async (request,response)=>{
-    const {id} = request.body	
+// //eliminar un usuario
+// menuRouter.post('/eliminar-menu',async (request,response)=>{
+//     const {id} = request.body	
 
-    try {
+//     try {
         
-        const usuario = await User.deleteOne({_id:id})
+//         const usuario = await menu.deleteOne({_id:id})
 
-        return response.status(200).json({message:'Usuario eliminado correctamente'})
+//         return response.status(200).json({message:'Usuario eliminado correctamente'})
 
-    } catch (error) {
-        return response.status(400).json({error:'No se pudo eliminar el usuario'})
-    }
-})
+//     } catch (error) {
+//         return response.status(400).json({error:'No se pudo eliminar el usuario'})
+//     }
+// })
 
-//obtener todos los usuarios
-usersRouter.get('/lista-User',async (request,response)=>{
 
-    try {
-        const listado = await User.find()
 
-        return response.status(200).json({textOk:true,data:listado})
+// //verificar el Registro
+// menuRouter.get('/validar-confirmacion/:correo',async (request,response)=>{
 
-    } catch (error) {
-        return response.status(400).json({error:'No se pudo obtener la lista de usuarios'})
-    }
-})
+//     try {
+//         const {correo} = response.param
 
-//verificar el Registro
-usersRouter.get('/validar-confirmacion/:correo',async (request,response)=>{
+//         console.log(correo)
 
-    try {
-        const {correo} = response.param
+//         //cerificar si existe el usuario
 
-        console.log(correo)
+//         const usuario = await menu.findOne({correo:correo})
 
-        //cerificar si existe el usuario
+//         if(!usuario){
+//             response.send('Error:El Usuario NO esta Registrado')
+//         }else if(usuario.verified){
 
-        const usuario = await User.findOne({correo:correo})
+//                 response.send('Error: El Usuario Ya esta Verificado')
 
-        if(!usuario){
-            response.send('Error:El Usuario NO esta Registrado')
-        }else if(usuario.verified){
+//         }else{
+//             //actualizar Verificacion
+//             const actualizarUsuario = await menu.findByIdAndUpdate({correo:correo},{verified:true})
 
-                response.send('Error: El Usuario Ya esta Verificado')
+//             await actualizarUsuario.save()
 
-        }else{
-            //actualizar Verificacion
-            const actualizarUsuario = await User.findByIdAndUpdate({correo:correo},{verified:true})
+//             //redireccionar
+//             // return response.redirect()
+//         }
 
-            await actualizarUsuario.save()
+//     } catch (error) {
+//         console.log(error)
+//     }
+// })
 
-            //redireccionar
-            // return response.redirect()
-        }
-
-    } catch (error) {
-        console.log(error)
-    }
-})
+module.exports = menuRouter

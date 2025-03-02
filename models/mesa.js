@@ -1,16 +1,21 @@
 const mongoose = require('mongoose')
-const infoRouter = require('../controllers/inforM')
+const mesaRouter = require('../controllers/mesas')
 
-const informacionSchema = new mongoose.Schema({
-    titulo: String,
-    contenido: String,
-    fecha: {
-        type: Date,
-        default: Date.now
-    }
+const mesaSchema = new mongoose.Schema({
+    mesa:Number,
+    hora:String,
+    pedidos:{
+        producto:String,
+        cantidad:Number,
+        precio:Number,
+        subtotal:Number,
+    },
+    propina:Number,
+    total:Number
+
 })
 
-informacionSchema.set('toJSON', {
+mesaSchema.set('toJSON', {
     transform: (document, returnedObject) => {
         returnedObject.id = returnedObject._id.toString()
         delete returnedObject._id
@@ -18,6 +23,6 @@ informacionSchema.set('toJSON', {
     }
 })
 
-const Informacion = mongoose.model('Informacion', informacionSchema)   
+const mesa = mongoose.model('Mesa', mesaSchema)   
 
-module.exports = Informacion
+module.exports = mesa

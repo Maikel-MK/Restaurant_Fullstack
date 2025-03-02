@@ -3,7 +3,8 @@ const express = require('express');
 const app = express();
 const mongoose = require('mongoose');
 const path = require('path');
-//const userRouter = require('./controllers/users');
+const menuRouter = require('./controllers/menus');
+const mesaRouter = require('./controllers/mesas');
 
 
 //coneccion a BD
@@ -28,7 +29,8 @@ app.use(express.json())
 
 
 //Rutes BACKEND
-//app.use('/api/users',userRouter)
+app.use('/api/menus',require('./controllers/menus'))
+app.use('/api/mesas',require('./controllers/mesas'))
 
 
 module.exports = app;

@@ -1,5 +1,7 @@
 const btnGuardarCliente = document.querySelector('#guardar-cliente')
 const contenido = document.querySelector('#resumen .contenido')
+// const axios = require('axios'); // Importar axios
+
 
 //crear un objeto para guardar la informacion del cliente
 
@@ -67,62 +69,82 @@ function mostrarSecciones(){
     secciones.forEach(i => i.classList.remove('d-none'))
 }
 
+async function obtenerMenu() {
+    try {
+        const url = 'api/menus/lista-menu';
+        console.log('Realizando solicitud a:', url);
 
-function obtenerMenu(){
-    const url = 'http://localhost:4000/menu'
-    fetch(url)
-    .then(respuesta=>respuesta.json())
-    .then(res=>mostrarMenu(res))
-    .catch(error=>console.log(error))
-}
+        const respuesta = await axios.get(url);
+        console.log('Respuesta recibida:', respuesta.data);
 
-function mostrarMenu(menu){
-   // console.log('mostrar')
-    //console.log(menu)
+        // Verificar si la respuesta tiene la estructura esperada
+        if (respuesta.data && respuesta.data.data && Array.isArray(respuesta.data.data)) {
+            // Acceder al array "menu" dentro del primer elemento de "data"
+            const menu = respuesta.data.data[0].menu;
 
-    const contenido = document.querySelector('#menu .contenido')
-
-    menu.forEach(i=>{
-        const fila = document.createElement('div')
-        fila.classList.add('row','border-top')
-
-        const nombre = document.createElement('div')
-        nombre.classList.add('col-md-3', 'py-3')
-        nombre.textContent = i.nombre
-
-        const precio = document.createElement('div')
-        precio.classList.add('col-md-3', 'py-3')
-        precio.textContent = `$${i.precio}`
-     //   '$',i.precio
-
-        const categoria = document.createElement('div')
-        categoria.classList.add('col-md-3', 'py-3')
-        categoria.textContent = categorias[i.categoria]
-
-        const inputCantidad = document.createElement('input')
-        inputCantidad.type = 'number'
-        inputCantidad.min = 0
-        inputCantidad.value = 0
-        inputCantidad.id = `producto-${i.id}`
-        inputCantidad.classList.add('form-control')
-        inputCantidad.oninput = function(){ //con oninput se puede crear una funcion que haga que acepte solamente nuemros para validarlos
-            const cantidad = parseInt(inputCantidad.value)
-            agregarOrden({...i,cantidad})
+            // Verificar si "menu" es un array
+            if (Array.isArray(menu)) {
+                mostrarMenu(menu);
+            } else {
+                console.error('El campo "menu" no es un array:', menu);
+            }
+        } else {
+            console.error('La respuesta no tiene la estructura esperada:', respuesta.data);
         }
-
-        const agregar = document.createElement('div')
-        agregar.classList.add('col-md-3', 'py-3')
-        agregar.appendChild(inputCantidad)
-
-        fila.appendChild(nombre)
-        fila.appendChild(precio)
-        fila.appendChild(categoria)
-        fila.appendChild(agregar)
-
-
-        contenido.appendChild(fila)
-    })
+    } catch (error) {
+        console.error('Error al obtener el menú:', error.message);
+    }
 }
+
+    function mostrarMenu(menu) {
+        const contenido = document.querySelector('#menu .contenido');
+        contenido.innerHTML = ''; // Limpiar el contenido anterior
+    
+        // Verificar si menu es un array
+        if (!Array.isArray(menu)) {
+            console.error('El parámetro menu no es un array:', menu);
+            return;
+        }
+    
+        menu.forEach(item => {
+            const fila = document.createElement('div');
+            fila.classList.add('row', 'border-top');
+    
+            const nombre = document.createElement('div');
+            nombre.classList.add('col-md-3', 'py-3');
+            nombre.textContent = item.nombre;
+    
+            const precio = document.createElement('div');
+            precio.classList.add('col-md-3', 'py-3');
+            precio.textContent = `$${item.precio}`;
+    
+            const categoria = document.createElement('div');
+            categoria.classList.add('col-md-3', 'py-3');
+            categoria.textContent = categorias[item.categoria];
+    
+            const inputCantidad = document.createElement('input');
+            inputCantidad.type = 'number';
+            inputCantidad.min = 0;
+            inputCantidad.value = 0;
+            inputCantidad.id = `producto-${item.id}`;
+            inputCantidad.classList.add('form-control');
+            inputCantidad.oninput = function() {
+                const cantidad = parseInt(inputCantidad.value);
+                agregarOrden({ ...item, cantidad });
+            };
+    
+            const agregar = document.createElement('div');
+            agregar.classList.add('col-md-3', 'py-3');
+            agregar.appendChild(inputCantidad);
+    
+            fila.appendChild(nombre);
+            fila.appendChild(precio);
+            fila.appendChild(categoria);
+            fila.appendChild(agregar);
+    
+            contenido.appendChild(fila);
+        });
+    }
 
 function agregarOrden(producto){
     let {pedido} = cliente
@@ -389,7 +411,6 @@ function guardarPedidoEnMesa(total) {
 
     mesa.push(pedidoCompleto);
     console.log(mesa); // Para verificar que se guardó correctamente
-    mostrarModalMesonero();
 }
 
 
@@ -448,7 +469,9 @@ function limpiarHTML(){
 //en el modal acordeon establecer los datos guardados
 
 
-document.getElementById('mesas').addEventListener('show.bs.modal', function () {
+const mesas = document.getElementById('mesas')
+
+mesas.addEventListener('show.bs.modal', function () {
     mostrarPedidosEnModal();
 });
 function mostrarPedidosEnModal() {
