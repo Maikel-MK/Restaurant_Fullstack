@@ -384,6 +384,7 @@ function calcularPropina() {
     const divTotales = document.createElement('div');
     divTotales.classList.add('total-pagar');
 
+    // Subtotales, propina y total (código existente)
     const subtotalParrafo = document.createElement('p');
     subtotalParrafo.classList.add('fs-3', 'fw-bold', 'mt-5');
     subtotalParrafo.textContent = 'Subtotal Consumo: ';
@@ -410,13 +411,31 @@ function calcularPropina() {
     totalp.classList.add('fs-normal');
     totalp.textContent = `$${total}`;
 
+    // Crear botón "Guardar Pedido"
     const botonGuardar = document.createElement('button');
     botonGuardar.textContent = "Guardar Pedido";
     botonGuardar.classList.add('btn', 'btn-success', 'mt-3');
-    botonGuardar.addEventListener('click', function() {
+    botonGuardar.addEventListener('click', () => {
         guardarPedidoEnMesa(total);
     });
 
+    // Crear botón "Actualizar Pedido"
+    const botonActualizar = document.createElement('button');
+    botonActualizar.textContent = "Actualizar Pedido";
+    botonActualizar.classList.add('btn', 'btn-warning', 'mt-3', 'ms-2');
+    botonActualizar.style.display = 'none'; // Ocultar inicialmente
+    botonActualizar.addEventListener('click', () => {
+        const idMesa = cliente.id; // Asegúrate de que el ID de la mesa esté disponible en el objeto `cliente`
+        actualizarPedidoEnMesa(total, idMesa);
+    });
+
+    // Agregar botones al contenedor
+    const botonesContainer = document.createElement('div');
+    botonesContainer.classList.add('d-flex', 'justify-content-end');
+    botonesContainer.appendChild(botonGuardar);
+    botonesContainer.appendChild(botonActualizar);
+
+    // Agregar elementos al contenedor de totales
     totalParrafo.appendChild(totalp);
 
     const totalPagarDiv = document.querySelector('.total-pagar');
@@ -427,11 +446,28 @@ function calcularPropina() {
     divTotales.appendChild(subtotalParrafo);
     divTotales.appendChild(propinaParrafo);
     divTotales.appendChild(totalParrafo);
-    divTotales.appendChild(botonGuardar);
+    divTotales.appendChild(botonesContainer);
 
     const formulario = document.querySelector('.formulario');
     formulario.appendChild(divTotales);
+
+    // Devolver referencias a los botones para manipularlos fuera de esta función
+    return { botonGuardar, botonActualizar };
 }
+
+// Función para mostrar el botón "Actualizar Pedido" y ocultar "Guardar Pedido"
+function mostrarBotonActualizar(botonGuardar, botonActualizar) {
+    botonGuardar.style.display = 'none';
+    botonActualizar.style.display = 'block';
+}
+
+// Función para mostrar el botón "Guardar Pedido" y ocultar "Actualizar Pedido"
+function mostrarBotonGuardar(botonGuardar, botonActualizar) {
+    botonGuardar.style.display = 'block';
+    botonActualizar.style.display = 'none';
+}
+
+
 
 async function guardarPedidoEnMesa(total) {
     const { mesa, hora, pedido } = cliente;
@@ -455,24 +491,9 @@ async function guardarPedidoEnMesa(total) {
     };
 
     try {
-        // Verificar si la mesa ya existe en la base de datos
-        const respuestaExistente = await axios.get(`api/mesas/obtener-mesa-por-mesa/${mesa}`);
-        
-        console.log('Respuesta recibida:', respuestaExistente.data);
-        const mesaExistente = respuestaExistente.data.data;
-
-        let respuesta;
-
-        if (mesaExistente) {
-            // Si la mesa existe, actualizarla
-            console.log('ID de la mesa a actualizar:', mesaExistente.id); // Verificar el ID
-            respuesta = await axios.put(`api/mesas/actualizar-mesa/${mesaExistente.id}`, datosReserva);
-            console.log('Reserva actualizada correctamente:', respuesta.data);
-        } else {
-            // Si la mesa no existe, crear una nueva reserva
-            respuesta = await axios.post('api/mesas/reservaMesa', datosReserva);
-            console.log('Reserva guardada correctamente:', respuesta.data);
-        }
+        // Enviar los datos al backend para crear una nueva reserva
+        const respuesta = await axios.post('api/mesas/reservaMesa', datosReserva);
+        console.log('Reserva guardada correctamente:', respuesta.data);
 
         // Limpiar el estado del cliente después de guardar
         cliente = {
@@ -485,10 +506,10 @@ async function guardarPedidoEnMesa(total) {
         limpiarHTML();
         mensajePedidoVacio();
     } catch (error) {
-        console.error('Error al guardar/actualizar la reserva:', error.message);
+        console.error('Error al guardar la reserva:', error.message);
 
         // Mostrar un mensaje de error al usuario
-        alert('Hubo un error al guardar/actualizar la reserva. Por favor, inténtalo de nuevo.');
+        alert('Hubo un error al guardar la reserva. Por favor, inténtalo de nuevo.');
     }
 }
 
@@ -621,7 +642,10 @@ function mostrarMesasEnModal(mesas) {
         const btnEditar = document.createElement('button');
         btnEditar.classList.add('btn', 'btn-warning', 'me-2');
         btnEditar.textContent = 'Editar';
-        btnEditar.onclick = () => editarMesa(mesa.id); // Función para editar
+        btnEditar.onclick = () => {
+            const { botonGuardar, botonActualizar } = calcularPropina();
+            editarMesa(mesa.id, botonGuardar, botonActualizar);
+        }; // Función para editar
 
         const btnEliminar = document.createElement('button');
         btnEliminar.classList.add('btn', 'btn-danger');
@@ -664,14 +688,26 @@ async function eliminarMesa(id) {
     }
 }
 
-async function editarMesa(id) {
+async function editarMesa(id, botonGuardar, botonActualizar) {
     try {
-        console.log('ID de la mesa a editar:', id); // Verificar el ID
+        // Verificar que los botones existan
+        if (!botonGuardar || !botonActualizar) {
+            throw new Error('Los botones no están definidos');
+        }
+
+        // Obtener los datos de la mesa desde el backend
         const respuesta = await axios.get(`api/mesas/obtener-mesa/${id}`);
         const mesa = respuesta.data.data;
 
         // Cargar los datos en la interfaz
         cargarDatosEnInterfaz(mesa);
+
+        // Mostrar el botón "Actualizar Pedido" y ocultar "Guardar Pedido"
+        botonGuardar.style.display = 'none';
+        botonActualizar.style.display = 'block';
+
+        // Guardar el ID de la mesa en el objeto `cliente` para usarlo al actualizar
+        cliente.id = mesa.id;
     } catch (error) {
         console.error('Error al obtener los datos de la mesa:', error.message);
         alert('Hubo un error al cargar la mesa. Por favor, inténtalo de nuevo.');
@@ -707,4 +743,48 @@ function cargarDatosEnInterfaz(mesa) {
 
     // Actualizar el resumen del pedido
     actualizarResumen();
+}
+
+async function actualizarPedidoEnMesa(total, id) {
+    const { mesa, hora, pedido } = cliente;
+
+    // Calcular la propina (puedes ajustar esto según tu lógica)
+    const propina = total;
+
+    // Estructurar los datos para enviar al backend
+    const datosReserva = {
+        mesa: parseInt(mesa), // Asegúrate de que sea un número
+        hora,
+        pedidos: pedido.map(item => ({
+            id: item.id,
+            producto: item.nombre,
+            cantidad: item.cantidad,
+            precio: item.precio,
+            subtotal: item.cantidad * item.precio
+        })),
+        propina,
+        total
+    };
+
+    try {
+        // Enviar los datos al backend para actualizar la reserva
+        const respuesta = await axios.put(`api/mesas/actualizar-mesa/${id}`, datosReserva);
+        console.log('Reserva actualizada correctamente:', respuesta.data);
+
+        // Limpiar el estado del cliente después de actualizar
+        cliente = {
+            mesa: '',
+            hora: '',
+            pedido: []
+        };
+
+        // Actualizar la interfaz de usuario
+        limpiarHTML();
+        mensajePedidoVacio();
+    } catch (error) {
+        console.error('Error al actualizar la reserva:', error.message);
+
+        // Mostrar un mensaje de error al usuario
+        alert('Hubo un error al actualizar la reserva. Por favor, inténtalo de nuevo.');
+    }
 }

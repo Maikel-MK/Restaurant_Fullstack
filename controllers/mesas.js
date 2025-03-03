@@ -2,12 +2,16 @@ const express = require('express');
 const mesaRouter = express.Router();
 const Mesa = require('../models/mesa');
 
-// Registrar una nueva reserva de mesa
+// Crear una nueva reserva de mesa
 mesaRouter.post('/reservaMesa', async (request, response) => {
+    console.log('Solicitud POST recibida en /api/mesas/reservaMesa'); // Log 1
+    console.log('Datos recibidos:', request.body); // Log 2
+
     const { mesa, hora, pedidos, propina, total } = request.body;
 
     // Validar que todos los campos estén presentes
     if (!mesa || !hora || !pedidos || !propina || !total) {
+        console.log('Error: Faltan campos obligatorios'); // Log 3
         return response.status(400).json({ error: 'Todos los campos son obligatorios' });
     }
 
@@ -24,13 +28,12 @@ mesaRouter.post('/reservaMesa', async (request, response) => {
         // Guardar en la base de datos
         await nuevaMesa.save();
 
-        // Devolver una respuesta exitosa
+        console.log('Reserva guardada correctamente:', nuevaMesa); // Log 4
         return response.status(201).json({ message: 'Reserva guardada correctamente', data: nuevaMesa });
     } catch (error) {
-        console.error('Error al guardar la reserva:', error.message);
+        console.error('Error al guardar la reserva:', error.message); // Log 5
         return response.status(500).json({ error: 'Error interno del servidor' });
     }
-    console.log('Solicitud recibida en /api/mesas/reservaMesa');
 });
 
 // Obtener todas las mesas reservadas
@@ -98,6 +101,10 @@ mesaRouter.get('/obtener-mesa-por-mesa/:mesa', async (request, response) => {
 
 // Actualizar una mesa por ID
 mesaRouter.put('/actualizar-mesa/:id', async (request, response) => {
+    console.log('Solicitud PUT recibida en /api/mesas/actualizar-mesa/:id'); // Log 1
+    console.log('ID de la mesa a actualizar:', request.params.id); // Log 2
+    console.log('Datos recibidos:', request.body); // Log 3
+
     try {
         const id = request.params.id;
         const datosActualizados = request.body;
@@ -105,15 +112,16 @@ mesaRouter.put('/actualizar-mesa/:id', async (request, response) => {
         const mesaActualizada = await Mesa.findByIdAndUpdate(id, datosActualizados, { new: true });
 
         if (!mesaActualizada) {
+            console.log('Error: Mesa no encontrada'); // Log 4
             return response.status(404).json({ error: 'Mesa no encontrada' });
         }
 
+        console.log('Reserva actualizada correctamente:', mesaActualizada); // Log 5
         return response.status(200).json({ message: 'Mesa actualizada correctamente', data: mesaActualizada });
     } catch (error) {
-        console.error('Error al actualizar la mesa:', error.message);
+        console.error('Error al actualizar la mesa:', error.message); // Log 6
         return response.status(500).json({ error: 'Error interno del servidor' });
     }
-    console.log('Solicitud recibida en /api/mesas/actualizar-mesa/:id');
 });
 
 
