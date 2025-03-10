@@ -101,28 +101,28 @@ mesaRouter.get('/obtener-mesa-por-mesa/:mesa', async (request, response) => {
 
 // Actualizar una mesa por ID
 mesaRouter.put('/actualizar-mesa/:id', async (request, response) => {
-    console.log('Solicitud PUT recibida en /api/mesas/actualizar-mesa/:id'); // Log 1
-    console.log('ID de la mesa a actualizar:', request.params.id); // Log 2
-    console.log('Datos recibidos:', request.body); // Log 3
+    console.log('Solicitud PUT recibida en /api/mesas/actualizar-mesa/:id');
+    console.log('ID de la mesa a actualizar:', request.params.id);
+    console.log('Datos recibidos:', request.body);
 
     try {
         const id = request.params.id;
         const datosActualizados = request.body;
 
+        // Buscar y actualizar la mesa en la base de datos
         const mesaActualizada = await Mesa.findByIdAndUpdate(id, datosActualizados, { new: true });
 
         if (!mesaActualizada) {
-            console.log('Error: Mesa no encontrada'); // Log 4
+            console.log('Error: Mesa no encontrada');
             return response.status(404).json({ error: 'Mesa no encontrada' });
         }
 
-        console.log('Reserva actualizada correctamente:', mesaActualizada); // Log 5
+        console.log('Reserva actualizada correctamente:', mesaActualizada);
         return response.status(200).json({ message: 'Mesa actualizada correctamente', data: mesaActualizada });
     } catch (error) {
-        console.error('Error al actualizar la mesa:', error.message); // Log 6
+        console.error('Error al actualizar la mesa:', error.message);
         return response.status(500).json({ error: 'Error interno del servidor' });
     }
 });
-
 
 module.exports = mesaRouter

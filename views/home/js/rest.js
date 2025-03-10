@@ -642,10 +642,7 @@ function mostrarMesasEnModal(mesas) {
         const btnEditar = document.createElement('button');
         btnEditar.classList.add('btn', 'btn-warning', 'me-2');
         btnEditar.textContent = 'Editar';
-        btnEditar.onclick = () => {
-            const { botonGuardar, botonActualizar } = calcularPropina();
-            editarMesa(mesa.id, botonGuardar, botonActualizar);
-        }; // Función para editar
+        btnEditar.onclick = () => abrirModalEditarMesa(mesa); 
 
         const btnEliminar = document.createElement('button');
         btnEliminar.classList.add('btn', 'btn-danger');
@@ -688,103 +685,142 @@ async function eliminarMesa(id) {
     }
 }
 
-async function editarMesa(id, botonGuardar, botonActualizar) {
-    try {
-        // Verificar que los botones existan
-        if (!botonGuardar || !botonActualizar) {
-            throw new Error('Los botones no están definidos');
-        }
+// Función para validar los datos de la mesa
+function validarDatosMesa(datos) {
+    const { mesa, hora, pedido } = datos;
 
-        // Obtener los datos de la mesa desde el backend
-        const respuesta = await axios.get(`api/mesas/obtener-mesa/${id}`);
-        const mesa = respuesta.data.data;
-
-        // Cargar los datos en la interfaz
-        cargarDatosEnInterfaz(mesa);
-
-        // Mostrar el botón "Actualizar Pedido" y ocultar "Guardar Pedido"
-        botonGuardar.style.display = 'none';
-        botonActualizar.style.display = 'block';
-
-        // Guardar el ID de la mesa en el objeto `cliente` para usarlo al actualizar
-        cliente.id = mesa.id;
-    } catch (error) {
-        console.error('Error al obtener los datos de la mesa:', error.message);
-        alert('Hubo un error al cargar la mesa. Por favor, inténtalo de nuevo.');
+    // Validar que la mesa sea un número entre 1 y 20
+    if (isNaN(mesa) || mesa < 1 ) {
+        return { valido: false, mensaje: '' };
     }
+
+    // Validar que la hora tenga el formato correcto (HH:MM)
+    const regexHora = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    if (!regexHora.test(hora)) {
+        return { valido: false, mensaje: 'La hora debe tener el formato HH:MM.' };
+    }
+
+    // Validar que haya al menos un producto en el pedido
+    if (!Array.isArray(pedido) || pedido.length === 0) {
+        return { valido: false, mensaje: 'Debe haber al menos un producto en el pedido.' };
+    }
+
+    // Validar cada producto en el pedido
+    for (const producto of pedido) {
+        if (!producto.id ||!producto.producto || isNaN(producto.cantidad) || producto.cantidad < 1 || isNaN(producto.precio) || producto.precio < 0) {
+            return { valido: false, mensaje: 'Los productos del pedido deben tener un ID, nombre, cantidad y precio válidos.' };
+        }
+    }
+
+    return { valido: true };
 }
 
-function cargarDatosEnInterfaz(mesa) {
-    // Cargar la mesa y la hora
-    document.querySelector('#mesa').value = mesa.mesa;
-    document.querySelector('#hora').value = mesa.hora;
+// Función para abrir el modal de edición de mesa
+function abrirModalEditarMesa(mesa) {
+    const editarMesaModal = new bootstrap.Modal(document.getElementById('editarMesaModal'));
+    editarMesaModal.show();
 
-    // Limpiar el pedido actual
-    cliente.pedido = [];
+    // Llenar los campos del modal con la información de la mesa
+    document.getElementById('editarMesa').value = mesa.mesa;
+    document.getElementById('editarHora').value = mesa.hora;
 
-    // Cargar los pedidos
+    // Llenar los productos del pedido
+    const editarPedidoContainer = document.getElementById('editarPedidoContainer');
+    editarPedidoContainer.innerHTML = ''; // Limpiar el contenedor
+
     mesa.pedidos.forEach(pedido => {
-        const producto = {
-            id: pedido.id,
-            nombre: pedido.producto,
-            precio: pedido.precio,
-            cantidad: pedido.cantidad
-        };
+        const productoDiv = document.createElement('div');
+        productoDiv.classList.add('mb-3');
 
-        // Agregar el producto al pedido del cliente
-        cliente.pedido.push(producto);
+        const nombreProducto = document.createElement('p');
+        nombreProducto.textContent = `Producto: ${pedido.producto}`;
 
-        // Actualizar la interfaz para reflejar el pedido
-        const inputCantidad = document.querySelector(`#producto-${producto.id}`);
-        if (inputCantidad) {
-            inputCantidad.value = producto.cantidad;
-        }
+        const inputCantidad = document.createElement('input');
+        inputCantidad.type = 'number';
+        inputCantidad.min = 0;
+        inputCantidad.value = pedido.cantidad;
+        inputCantidad.classList.add('form-control');
+        inputCantidad.setAttribute('data-producto-id', pedido.id);
+
+        productoDiv.appendChild(nombreProducto);
+        productoDiv.appendChild(inputCantidad);
+        editarPedidoContainer.appendChild(productoDiv);
     });
 
-    // Actualizar el resumen del pedido
-    actualizarResumen();
+    // Guardar el ID de la mesa en un atributo para usarlo al guardar los cambios
+    document.getElementById('formEditarMesa').setAttribute('data-mesa-id', mesa.id);
 }
 
-async function actualizarPedidoEnMesa(total, id) {
-    const { mesa, hora, pedido } = cliente;
+// Event listener para guardar cambios en el modal de edición de mesa
+document.getElementById('guardarCambiosMesa').addEventListener('click', async () => {
+    // Obtener el ID de la mesa
+    const mesaId = document.getElementById('formEditarMesa').getAttribute('data-mesa-id');
+    console.log('ID de la mesa:', mesaId); // Verificar el ID de la mesa
 
-    // Calcular la propina (puedes ajustar esto según tu lógica)
-    const propina = total;
+    // Obtener los nuevos valores de la mesa y la hora
+    const nuevaMesa = document.getElementById('editarMesa').value;
+    const nuevaHora = document.getElementById('editarHora').value;
+    console.log('Nueva mesa:', nuevaMesa); // Verificar la nueva mesa
+    console.log('Nueva hora:', nuevaHora); // Verificar la nueva hora
+
+    // Obtener las nuevas cantidades de los productos
+    const nuevosPedidos = [];
+    const inputsCantidad = document.querySelectorAll('#editarPedidoContainer input');
+    inputsCantidad.forEach(input => {
+        const productoId = input.getAttribute('data-producto-id');
+        const nuevaCantidad = parseInt(input.value);
+
+        if (nuevaCantidad > 0) {
+            nuevosPedidos.push({
+                id: productoId,
+                cantidad: nuevaCantidad
+            });
+        }
+    });
+    console.log('Nuevos pedidos:', nuevosPedidos); // Verificar los nuevos pedidos
 
     // Estructurar los datos para enviar al backend
-    const datosReserva = {
-        mesa: parseInt(mesa), // Asegúrate de que sea un número
-        hora,
-        pedidos: pedido.map(item => ({
-            id: item.id,
-            producto: item.nombre,
-            cantidad: item.cantidad,
-            precio: item.precio,
-            subtotal: item.cantidad * item.precio
-        })),
-        propina,
-        total
+    const datosActualizados = {
+        mesa: nuevaMesa,
+        hora: nuevaHora,
+        pedido: nuevosPedidos
     };
+    console.log('Datos a enviar:', datosActualizados); // Verificar los datos a enviar
 
     try {
-        // Enviar los datos al backend para actualizar la reserva
-        const respuesta = await axios.put(`api/mesas/actualizar-mesa/${id}`, datosReserva);
-        console.log('Reserva actualizada correctamente:', respuesta.data);
+        console.log('Enviando solicitud PUT al backend...'); // Verificar que se intenta enviar la solicitud
 
-        // Limpiar el estado del cliente después de actualizar
-        cliente = {
-            mesa: '',
-            hora: '',
-            pedido: []
-        };
+        // Enviar los datos al backend para actualizar la mesa
+        const respuesta = await axios.put(`api/mesas/actualizar-mesa/${mesaId}`, datosActualizados, {
+            headers: {
+                'Content-Type': 'application/json' // Asegura que los datos se envíen como JSON
+            }
+        });
 
-        // Actualizar la interfaz de usuario
-        limpiarHTML();
-        mensajePedidoVacio();
+        console.log('Respuesta del backend:', respuesta.data); // Verificar la respuesta del backend
+
+        if (respuesta.data && respuesta.data.message === 'Mesa actualizada correctamente') {
+            console.log('Mesa actualizada correctamente'); // Verificar que la mesa se actualizó
+
+            // Cerrar el modal
+            const editarMesaModal = bootstrap.Modal.getInstance(document.getElementById('editarMesaModal'));
+            editarMesaModal.hide();
+
+            // Actualizar la lista de mesas en el modal
+            obtenerMesasReservadas();
+        } else {
+            console.log('Error en la respuesta del backend:', respuesta.data); // Verificar si hay un error en la respuesta
+            mostrarAlerta('Hubo un error al actualizar la mesa.');
+        }
     } catch (error) {
-        console.error('Error al actualizar la reserva:', error.message);
+        console.error('Error al actualizar la mesa:', error); // Verificar el error en la consola
 
-        // Mostrar un mensaje de error al usuario
-        alert('Hubo un error al actualizar la reserva. Por favor, inténtalo de nuevo.');
+        // Mostrar detalles del error si está disponible
+        if (error.response) {
+            console.log('Respuesta del error:', error.response.data); // Verificar la respuesta del error
+            console.log('Estado del error:', error.response.status); // Verificar el estado del error
+        }
+
+        mostrarAlerta('Hubo un error al actualizar la mesa.');
     }
-}
+});
