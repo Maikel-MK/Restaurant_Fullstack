@@ -685,35 +685,6 @@ async function eliminarMesa(id) {
     }
 }
 
-// Función para validar los datos de la mesa
-function validarDatosMesa(datos) {
-    const { mesa, hora, pedido } = datos;
-
-    // Validar que la mesa sea un número entre 1 y 20
-    if (isNaN(mesa) || mesa < 1 ) {
-        return { valido: false, mensaje: '' };
-    }
-
-    // Validar que la hora tenga el formato correcto (HH:MM)
-    const regexHora = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
-    if (!regexHora.test(hora)) {
-        return { valido: false, mensaje: 'La hora debe tener el formato HH:MM.' };
-    }
-
-    // Validar que haya al menos un producto en el pedido
-    if (!Array.isArray(pedido) || pedido.length === 0) {
-        return { valido: false, mensaje: 'Debe haber al menos un producto en el pedido.' };
-    }
-
-    // Validar cada producto en el pedido
-    for (const producto of pedido) {
-        if (!producto.id ||!producto.producto || isNaN(producto.cantidad) || producto.cantidad < 1 || isNaN(producto.precio) || producto.precio < 0) {
-            return { valido: false, mensaje: 'Los productos del pedido deben tener un ID, nombre, cantidad y precio válidos.' };
-        }
-    }
-
-    return { valido: true };
-}
 
 // Función para abrir el modal de edición de mesa
 function abrirModalEditarMesa(mesa) {
